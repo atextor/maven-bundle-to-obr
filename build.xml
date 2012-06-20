@@ -1,0 +1,78 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="maven-bundle-to-obr" default="resolve-for">
+	<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="ivy-2.3.0-rc1.jar"/>
+	<taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="bnd.jar"/> 
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="ant-contrib-1.0b3.jar"/>
+
+	<property name="output.dir" value="wrapped"/>
+	<property name="bnd.file" value="bnd.bnd"/>
+	<property name="ivy.file" value="ivy.xml"/>
+
+	<target name="write-ivy-file">
+		<echo file="${ivy.file}"><![CDATA[
+			<ivy-module version="2.0">
+			<info organisation="HSRM" module="dummy-bundle"/>
+			<dependencies>
+				<dependency org="${target.org}" name="${target.name}" rev="${target.version}"/>
+			</dependencies>
+			</ivy-module>
+		]]></echo>
+	</target>
+
+	<target name="write-bnd-file">
+		<property name="jar.file" value="${target.org}--${target.name}--${target.version}.jar"/>
+		<echo file="${bnd.file}">Bundle-SymbolicName: ${target.org}.${target.name}
+Bundle-Version: ${target.version}
+Include-Resource: @jar/lib/default-bundle/${jar.file}</echo>
+		<if>
+			<available file="lib/default-source/${jar.file}"/>
+			<then><echo file="${bnd.file}" append="yes">, OSGI-OPT/=@jar/lib/default-source/${jar.file}
+</echo></then>
+			<else><echo file="${bnd.file}" append="yes"/></else>
+		</if>
+	</target>
+
+	<target name="resolve-for">
+		<if>
+			<and>
+				<isset property="org"/>
+				<isset property="name"/>
+				<isset property="version"/>
+			</and>
+			<then>
+				<antcall target="write-ivy-file">
+					<param name="target.org" value="${org}"/>
+					<param name="target.name" value="${name}"/>
+					<param name="target.version" value="${version}"/>
+				</antcall>
+				<antcall target="resolve"/>
+				<delete file="${ivy.file}" />
+
+				<foreach target="bnd" param="file">
+					<fileset dir="lib" includes="default-bundle/*.jar,default-jar/*.jar"/>
+				</foreach>
+			</then>
+			<else>
+				<echo message="Usage: ant -Dorg=&lt;groupId&gt; -Dname=&lt;artifactId&gt; -Dversion=&lt;version&gt;"/>
+			</else>
+		</if>
+	</target>
+
+	<target name="resolve" description="resolve dependencies">
+		<ivy:retrieve pattern="lib/[conf]-[type]/[organisation]--[artifact]--[revision].[ext]" overwriteMode="always" />
+	</target>
+
+	<target name="bnd" description="wrap a jar">
+		<echo message="Wrapping file: ${file}"/>
+		<propertyregex property="org" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\1" casesensitive="true" override="true" />
+		<propertyregex property="name" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\2" casesensitive="true" override="true" />
+		<propertyregex property="version" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\3" casesensitive="true" override="true" />
+		<antcall target="write-bnd-file">
+			<param name="target.org" value="${org}"/>
+			<param name="target.name" value="${name}"/>
+			<param name="target.version" value="${version}"/>
+		</antcall>
+		<mkdir dir="${output.dir}" />
+		<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.file}"/>
+		<delete file="${bnd.file}" />
+	</target>
+</project>
