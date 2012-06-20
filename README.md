@@ -11,10 +11,10 @@ the Maven repository support in Bndtools is still in the making.
 
 * Ant
 
-*Usage example:*
+*Usage example*
 
 	ant -Dorg=org.apache.jena -Dname=apache-jena -Dversion=2.7.1
 
-will produce a directory "wrapped" that contains an OBR jar (.bar) for each each dependency of apache-jena. It will also create a "lib" directory that
+will produce a directory "wrapped" that contains an OBR jar (.bar) for each dependency of apache-jena. It will also create a "lib" directory that
 contains the downloaded jars, which you can inspect or delete.
 
