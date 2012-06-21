@@ -22,7 +22,7 @@
 		<property name="jar.file" value="${target.org}--${target.name}--${target.version}.jar"/>
 		<echo file="${bnd.file}">Bundle-SymbolicName: ${target.org}.${target.name}
 Bundle-Version: ${target.version}
-Include-Resource: @jar/lib/default-bundle/${jar.file}</echo>
+Include-Resource: @jar/lib/${type}/${jar.file}</echo>
 		<if>
 			<available file="lib/default-source/${jar.file}"/>
 			<then><echo file="${bnd.file}" append="yes">, OSGI-OPT/=@jar/lib/default-source/${jar.file}
@@ -66,10 +66,12 @@ Include-Resource: @jar/lib/default-bundle/${jar.file}</echo>
 		<propertyregex property="org" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\1" casesensitive="true" override="true" />
 		<propertyregex property="name" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\2" casesensitive="true" override="true" />
 		<propertyregex property="version" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\3" casesensitive="true" override="true" />
+		<propertyregex property="ivy.type" input="${file}" regexp="lib/(.*)/.*" select="\1" casesensitive="true" override="true" />
 		<antcall target="write-bnd-file">
 			<param name="target.org" value="${org}"/>
 			<param name="target.name" value="${name}"/>
 			<param name="target.version" value="${version}"/>
+			<param name="type" value="${ivy.type}"/>
 		</antcall>
 		<mkdir dir="${output.dir}" />
 		<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.file}"/>
