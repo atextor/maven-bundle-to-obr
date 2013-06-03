@@ -4,7 +4,7 @@
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="ant-contrib-1.0b3.jar"/>
 
 	<property name="output.dir" value="wrapped"/>
-	<property name="bnd.file" value="bnd.bnd"/>
+	<property name="bnd.dir" value="bnd"/>
 	<property name="ivy.file" value="ivy.xml"/>
 
 	<target name="write-ivy-file">
@@ -20,7 +20,10 @@
 
 	<target name="write-bnd-file">
 		<property name="jar.file" value="${target.org}--${target.name}--${target.version}.jar"/>
-		<echo file="${bnd.file}">Bundle-SymbolicName: ${target.org}.${target.name}
+		<property name="bnd.file" value="${bnd.dir}/${target.org}--${target.name}--${target.version}.bnd"/>
+		<echo>Schreibe bnd file: ${bnd.file}</echo>
+		<echo file="${bnd.file}">Bundle-Name: ${target.name}
+Bundle-SymbolicName: ${target.org}.${target.name}
 Bundle-Version: ${target.version}
 Include-Resource: @jar/lib/${type}/${jar.file}</echo>
 		<if>
@@ -44,6 +47,7 @@ Include-Resource: @jar/lib/${type}/${jar.file}</echo>
 					<param name="target.name" value="${name}"/>
 					<param name="target.version" value="${version}"/>
 				</antcall>
+				<mkdir dir="${bnd.dir}" />
 				<antcall target="resolve"/>
 				<delete file="${ivy.file}" />
 
@@ -74,7 +78,9 @@ Include-Resource: @jar/lib/${type}/${jar.file}</echo>
 			<param name="type" value="${ivy.type}"/>
 		</antcall>
 		<mkdir dir="${output.dir}" />
-		<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.file}"/>
-		<delete file="${bnd.file}" />
+		<property name="bnd.file" value="${bnd.dir}/${org}--${name}--${version}.bnd"/>
+		<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.dir}"/>
+		<move file="${output.dir}/${org}--${name}--${version}.bar" tofile="${output.dir}/${org}.${name}.bar"/>
+		<delete dir="${bnd.dir}" />
 	</target>
 </project>
