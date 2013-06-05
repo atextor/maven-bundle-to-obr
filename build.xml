@@ -5,6 +5,7 @@
 
 	<property name="output.dir" value="wrapped"/>
 	<property name="bnd.dir" value="bnd"/>
+	<property name="lib.dir" value="lib"/>
 	<property name="ivy.file" value="ivy.xml"/>
 
 	<target name="write-ivy-file">
@@ -21,14 +22,13 @@
 	<target name="write-bnd-file">
 		<property name="jar.file" value="${target.org}--${target.name}--${target.version}.jar"/>
 		<property name="bnd.file" value="${bnd.dir}/${target.org}--${target.name}--${target.version}.bnd"/>
-		<echo>Schreibe bnd file: ${bnd.file}</echo>
 		<echo file="${bnd.file}">Bundle-Name: ${target.name}
 Bundle-SymbolicName: ${target.org}.${target.name}
 Bundle-Version: ${target.version}
-Include-Resource: @jar/lib/${type}/${jar.file}</echo>
+Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 		<if>
-			<available file="lib/default-source/${jar.file}"/>
-			<then><echo file="${bnd.file}" append="yes">, OSGI-OPT/=@jar/lib/default-source/${jar.file}
+			<available file="${lib.dir}/default-source/${jar.file}"/>
+			<then><echo file="${bnd.file}" append="yes">, OSGI-OPT/=@jar/${lib.dir}/default-source/${jar.file}
 </echo></then>
 			<else><echo file="${bnd.file}" append="yes"/></else>
 		</if>
@@ -50,10 +50,13 @@ Include-Resource: @jar/lib/${type}/${jar.file}</echo>
 				<mkdir dir="${bnd.dir}" />
 				<antcall target="resolve"/>
 				<delete file="${ivy.file}" />
-
 				<foreach target="bnd" param="file">
-					<fileset dir="lib" includes="default-bundle/*.jar,default-jar/*.jar"/>
+					<path>
+						<fileset dir="${lib.dir}" includes="default-bundle/*.jar,default-jar/*.jar"/>
+					</path>
 				</foreach>
+				<delete dir="${lib.dir}"/>
+				<delete dir="${bnd.dir}"/>
 			</then>
 			<else>
 				<echo message="Usage: ant -Dorg=&lt;groupId&gt; -Dname=&lt;artifactId&gt; -Dversion=&lt;version&gt;"/>
@@ -62,25 +65,47 @@ Include-Resource: @jar/lib/${type}/${jar.file}</echo>
 	</target>
 
 	<target name="resolve" description="resolve dependencies">
-		<ivy:retrieve pattern="lib/[conf]-[type]/[organisation]--[artifact]--[revision].[ext]" overwriteMode="always" />
+		<ivy:retrieve pattern="${lib.dir}/[conf]-[type]/[organisation]--[artifact]--[revision].[ext]" overwriteMode="always" />
 	</target>
 
 	<target name="bnd" description="wrap a jar">
-		<echo message="Wrapping file: ${file}"/>
 		<propertyregex property="org" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\1" casesensitive="true" override="true" />
 		<propertyregex property="name" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\2" casesensitive="true" override="true" />
 		<propertyregex property="version" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\3" casesensitive="true" override="true" />
-		<propertyregex property="ivy.type" input="${file}" regexp="lib/(.*)/.*" select="\1" casesensitive="true" override="true" />
-		<antcall target="write-bnd-file">
-			<param name="target.org" value="${org}"/>
-			<param name="target.name" value="${name}"/>
-			<param name="target.version" value="${version}"/>
-			<param name="type" value="${ivy.type}"/>
-		</antcall>
-		<mkdir dir="${output.dir}" />
-		<property name="bnd.file" value="${bnd.dir}/${org}--${name}--${version}.bnd"/>
-		<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.dir}"/>
-		<move file="${output.dir}/${org}--${name}--${version}.bar" tofile="${output.dir}/${org}.${name}.bar"/>
-		<delete dir="${bnd.dir}" />
+		<propertyregex property="ivy.type" input="${file}" regexp="${lib.dir}/(.*)/.*" select="\1" casesensitive="true" override="true" />
+
+		<if>
+			<resourceexists>
+				<zipentry zipfile="${file}" name="META-INF/MANIFEST.MF" />
+			</resourceexists>
+			<then>
+				<loadproperties>
+					<zipentry zipfile="${file}" name="META-INF/MANIFEST.MF" />
+					<filterchain>
+						<containsregex pattern="Bundle-Name" />
+					</filterchain>
+				</loadproperties>
+			</then>
+		</if>
+
+		<if>
+			<isset property="Bundle-Name" />
+			<then>
+				<echo message="${name} is alread a bundle" />
+				<copy file="${file}" tofile="${output.dir}/${name}.bar" overwrite="true"/>
+			</then>
+			<else>
+				<echo message="Wrapping ${name} as OSGi bundle" />
+				<antcall target="write-bnd-file">
+					<param name="target.org" value="${org}" />
+					<param name="target.name" value="${name}" />
+					<param name="target.version" value="${version}" />
+					<param name="type" value="${ivy.type}" />
+				</antcall>
+				<mkdir dir="${output.dir}" />
+				<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.dir}" trace="on" />
+				<move file="${output.dir}/${org}--${name}--${version}.bar" tofile="${output.dir}/${name}.bar" overwrite="true" />
+			</else>
+		</if>
 	</target>
 </project>
