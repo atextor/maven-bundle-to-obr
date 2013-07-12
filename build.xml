@@ -69,10 +69,41 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 		<ivy:retrieve pattern="${lib.dir}/[conf]-[type]/[organisation]--[artifact]--[revision].[ext]" overwriteMode="always" />
 	</target>
 
-	<target name="bnd" description="wrap a jar">
+	<target name="get-name-parts" description="given a file name, determine org, name and version">
 		<propertyregex property="org" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\1" casesensitive="true" override="true" />
 		<propertyregex property="name" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\2" casesensitive="true" override="true" />
 		<propertyregex property="version" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\3" casesensitive="true" override="true" />
+	
+		<if>
+			<or>
+				<not><isset property="org" /></not>
+				<not><isset property="name" /></not>
+				<not><isset property="version" /></not>
+			</or>
+			<then>
+				<!-- regexp didn't work. try a different one -->
+				<propertyregex property="org" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\1" casesensitive="true" override="true" />
+				<propertyregex property="name" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\1" casesensitive="true" override="true" />
+				<propertyregex property="version" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\2" casesensitive="true" override="true" />
+				<if>
+					<or>
+						<not><isset property="org" /></not>
+						<not><isset property="name" /></not>
+						<not><isset property="version" /></not>
+					</or>
+					<then>
+						<fail message="Could not determine org/name/version for file: ${file}" />
+					</then>
+				</if>
+			</then>
+		</if>
+	</target>
+
+	<target name="bnd" description="wrap a jar">
+		<antcallback target="-getnameparts" return="org, name, version">
+			<param name="file" value="${file}" />
+		</antcallback>
+
 		<propertyregex property="ivy.type" input="${file}" regexp="${lib.dir}/(.*)/.*" select="\1" casesensitive="true" override="true" />
 
 		<if>
