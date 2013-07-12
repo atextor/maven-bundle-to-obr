@@ -61,7 +61,9 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 		</if>
 
 		<foreach target="bnd" param="file">
-			<fileset dir="additional" includes="*.jar" />
+			<path>
+				<fileset dir="additional" includes="*.jar" />
+			</path>
 		</foreach>
 	</target>
 
