@@ -58,10 +58,11 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 				<delete dir="${lib.dir}"/>
 				<delete dir="${bnd.dir}"/>
 			</then>
-			<else>
-				<echo message="Usage: ant -Dorg=&lt;groupId&gt; -Dname=&lt;artifactId&gt; -Dversion=&lt;version&gt;"/>
-			</else>
 		</if>
+
+		<foreach target="bnd" param="file">
+			<fileset dir="additional" includes="*.jar" />
+		</foreach>
 	</target>
 
 	<target name="resolve" description="resolve dependencies">
