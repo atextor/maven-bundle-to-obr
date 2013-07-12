@@ -102,7 +102,7 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 	</target>
 
 	<target name="bnd" description="wrap a jar">
-		<antcallback target="-getnameparts" return="org, name, version">
+		<antcallback target="get-name-parts" return="org, name, version">
 			<param name="file" value="${file}" />
 		</antcallback>
 
