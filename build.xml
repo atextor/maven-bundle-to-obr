@@ -7,6 +7,7 @@
 	<property name="bnd.dir" value="bnd"/>
 	<property name="lib.dir" value="lib"/>
 	<property name="ivy.file" value="ivy.xml"/>
+	<property name="additional.dir" value="additional"/>
 
 	<target name="write-ivy-file">
 		<echo file="${ivy.file}"><![CDATA[
@@ -20,12 +21,11 @@
 	</target>
 
 	<target name="write-bnd-file">
-		<property name="jar.file" value="${target.org}--${target.name}--${target.version}.jar"/>
 		<property name="bnd.file" value="${bnd.dir}/${target.org}--${target.name}--${target.version}.bnd"/>
 		<echo file="${bnd.file}">Bundle-Name: ${target.name}
 Bundle-SymbolicName: ${target.org}.${target.name}
 Bundle-Version: ${target.version}
-Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
+Include-Resource: @jar/${jar.file}</echo>
 		<if>
 			<available file="${lib.dir}/default-source/${jar.file}"/>
 			<then><echo file="${bnd.file}" append="yes">, OSGI-OPT/=@jar/${lib.dir}/default-source/${jar.file}
@@ -47,9 +47,9 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 					<param name="target.name" value="${name}"/>
 					<param name="target.version" value="${version}"/>
 				</antcall>
-				<mkdir dir="${bnd.dir}" />
+				<mkdir dir="${bnd.dir}"/>
 				<antcall target="resolve"/>
-				<delete file="${ivy.file}" />
+				<delete file="${ivy.file}"/>
 				<foreach target="bnd" param="file">
 					<path>
 						<fileset dir="${lib.dir}" includes="default-bundle/*.jar,default-jar/*.jar"/>
@@ -62,39 +62,39 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 
 		<foreach target="bnd" param="file">
 			<path>
-				<fileset dir="additional" includes="*.jar" />
+				<fileset dir="additional" includes="*.jar"/>
 			</path>
 		</foreach>
 	</target>
 
 	<target name="resolve" description="resolve dependencies">
-		<ivy:retrieve pattern="${lib.dir}/[conf]-[type]/[organisation]--[artifact]--[revision].[ext]" overwriteMode="always" />
+		<ivy:retrieve pattern="${lib.dir}/[conf]-[type]/[organisation]--[artifact]--[revision].[ext]" overwriteMode="always"/>
 	</target>
 
 	<target name="get-name-parts" description="given a file name, determine org, name and version">
-		<propertyregex property="org" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\1" casesensitive="true" override="true" />
-		<propertyregex property="name" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\2" casesensitive="true" override="true" />
-		<propertyregex property="version" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\3" casesensitive="true" override="true" />
+		<propertyregex property="org" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\1" casesensitive="true" override="true"/>
+		<propertyregex property="name" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\2" casesensitive="true" override="true"/>
+		<propertyregex property="version" input="${file}" regexp=".*/(.*)--(.*)--(.*)\.jar" select="\3" casesensitive="true" override="true"/>
 	
 		<if>
 			<or>
-				<not><isset property="org" /></not>
-				<not><isset property="name" /></not>
-				<not><isset property="version" /></not>
+				<not><isset property="org"/></not>
+				<not><isset property="name"/></not>
+				<not><isset property="version"/></not>
 			</or>
 			<then>
 				<!-- regexp didn't work. try a different one -->
-				<propertyregex property="org" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\1" casesensitive="true" override="true" />
-				<propertyregex property="name" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\1" casesensitive="true" override="true" />
-				<propertyregex property="version" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\2" casesensitive="true" override="true" />
+				<propertyregex property="org" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\1" casesensitive="true" override="true"/>
+				<propertyregex property="name" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\1" casesensitive="true" override="true"/>
+				<propertyregex property="version" input="${file}" regexp=".*/(.*)-(.*)\.jar" select="\2" casesensitive="true" override="true"/>
 				<if>
 					<or>
-						<not><isset property="org" /></not>
-						<not><isset property="name" /></not>
-						<not><isset property="version" /></not>
+						<not><isset property="org"/></not>
+						<not><isset property="name"/></not>
+						<not><isset property="version"/></not>
 					</or>
 					<then>
-						<fail message="Could not determine org/name/version for file: ${file}" />
+						<fail message="Could not determine org/name/version for file: ${file}"/>
 					</then>
 				</if>
 			</then>
@@ -103,42 +103,57 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 
 	<target name="bnd" description="wrap a jar">
 		<antcallback target="get-name-parts" return="org, name, version">
-			<param name="file" value="${file}" />
+			<param name="file" value="${file}"/>
 		</antcallback>
 
-		<propertyregex property="ivy.type" input="${file}" regexp="${lib.dir}/(.*)/.*" select="\1" casesensitive="true" override="true" />
+		<propertyregex property="ivy.type" input="${file}" regexp="${lib.dir}/(.*)/.*" select="\1" casesensitive="true" override="true"/>
 
 		<if>
 			<resourceexists>
-				<zipentry zipfile="${file}" name="META-INF/MANIFEST.MF" />
+				<zipentry zipfile="${file}" name="META-INF/MANIFEST.MF"/>
 			</resourceexists>
 			<then>
 				<loadproperties>
-					<zipentry zipfile="${file}" name="META-INF/MANIFEST.MF" />
+					<zipentry zipfile="${file}" name="META-INF/MANIFEST.MF"/>
 					<filterchain>
-						<containsregex pattern="Bundle-Name" />
+						<containsregex pattern="Bundle-Name"/>
 					</filterchain>
 				</loadproperties>
 			</then>
 		</if>
 
 		<if>
-			<isset property="Bundle-Name" />
+			<isset property="Bundle-Name"/>
 			<then>
-				<echo message="${name} is already a bundle" />
+				<echo message="${name} is already a bundle"/>
 				<copy file="${file}" tofile="${output.dir}/${name}.bar" overwrite="true"/>
 			</then>
 			<else>
-				<echo message="Wrapping ${name} as OSGi bundle" />
+				<echo message="Wrapping ${name} as OSGi bundle"/>
+
+				<if>
+					<isset property="ivy.type"/>
+					<then>
+						<property name="jar.file" value="${lib.dir}/${ivy.type}/${jar.file}/${target.org}--${target.name}--${target.version}.jar"/>
+					</then>
+					<else>
+						<property name="jar.file" value="${file}" relative="yes"/>
+					</else>
+				</if>
+
 				<antcall target="write-bnd-file">
-					<param name="target.org" value="${org}" />
-					<param name="target.name" value="${name}" />
-					<param name="target.version" value="${version}" />
-					<param name="type" value="${ivy.type}" />
+					<param name="target.org" value="${org}"/>
+					<param name="target.name" value="${name}"/>
+					<param name="target.version" value="${version}"/>
+					<param name="jar.file" value="${jar.file}"/>
 				</antcall>
-				<mkdir dir="${output.dir}" />
-				<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.dir}" trace="on" />
-				<move file="${output.dir}/${org}--${name}--${version}.bar" tofile="${output.dir}/${name}.bar" overwrite="true" />
+
+				<basename property="base.file" file="${jar.file}"/>
+				<propertyregex property="base.file.bar" input="${base.file}" regexp="jar$" replace="bar" global="true"/>
+
+				<mkdir dir="${output.dir}"/>
+				<bndwrap jars="${file}" output="${output.dir}" definitions="${bnd.dir}" trace="on"/>
+				<move file="${output.dir}/${base.file.bar}" tofile="${output.dir}/${name}.bar" overwrite="true"/>
 			</else>
 		</if>
 	</target>
