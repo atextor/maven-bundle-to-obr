@@ -125,7 +125,7 @@ Include-Resource: @jar/${lib.dir}/${type}/${jar.file}</echo>
 		<if>
 			<isset property="Bundle-Name" />
 			<then>
-				<echo message="${name} is alread a bundle" />
+				<echo message="${name} is already a bundle" />
 				<copy file="${file}" tofile="${output.dir}/${name}.bar" overwrite="true"/>
 			</then>
 			<else>
